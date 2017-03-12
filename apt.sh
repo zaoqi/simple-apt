@@ -27,7 +27,7 @@ debdep() {
 #参数：$dvd
 packages() {
 	for f in "$*/dists/jessie"/*/binary-armel/Packages.gz ;do
-		gzip -dc "$f" || error
+		gzip -dc "$f"
 	done
 }
 #参数：$dvd 包名
@@ -48,9 +48,22 @@ getdeb() {
 	echo -n "$1/"
 	package "$1" "$2" | grep Filename | sed 's/Filename: \(.*\)/\1/g'
 }
+#参数：$dvd 包名
+packagedep() {
+	local t="$(mktemp)"
+	getdeb "$1" "$2">$t
+	local d=$(undeb "$(cat $t)")
+	rm "$t" 1>&2 || error
+	debdep "$d"
+	rm -rfv "$d" 1>&2 || error
+}
 error() {
 	echo "ERROR" 1>&2
 	exit 1
 }
+#参数：$dvd 包名
+#下载包和所有依赖到当前目录
+downloaddeb() {
+}
 #debdep $(undeb "$pool/main/a/apt"/apt_*_armel.deb)
-getdeb "$dvd" python-wstools
+packagedep "$dvd" apt
