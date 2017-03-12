@@ -17,8 +17,11 @@ debinfo() {
 	cd - >/dev/null
 	rm -rfv $OLDPWD 1>&2 || error
 }
+debdep() {
+	debinfo $1 | grep Depends | sed 's/Depends: \(.*\)/\1/' | sed 's/([^)]*)//g' | sed 's/ *, */ /g'
+}
 error() {
 	echo "ERROR" 1>&2
 	exit 1
 }
-debinfo $(undeb "$pool/main/a/apt"/apt_*_armel.deb)
+debdep $(undeb "$pool/main/a/apt"/apt_*_armel.deb)
