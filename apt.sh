@@ -1,4 +1,12 @@
 #!/bin/sh
+getpidSh="$(mktemp)"
+echo '#!/bin/sh
+echo $PPID'>$getpidSh
+chmod a+x $getpidSh
+getpid() {
+	$getpidSh
+}
+pid="$(getpid)"
 dvd="$1"
 pool="$1/pool"
 if [ ! -d "$pool" ] ;then
@@ -52,18 +60,34 @@ getdeb() {
 packagedep() {
 	local t="$(mktemp)"
 	getdeb "$1" "$2">$t
-	local d=$(undeb "$(cat $t)")
+	local p="$(cat $t)"
+	if [ "$p" = "" ] ;then
+		return
+	fi
+	local d=$(undeb "$p")
 	rm "$t" 1>&2 || error
 	debdep "$d"
 	rm -rfv "$d" 1>&2 || error
 }
 error() {
 	echo "ERROR" 1>&2
+	kill $pid
 	exit 1
 }
 #参数：$dvd 包名
 #下载包和所有依赖到当前目录
 downloaddeb() {
+	local t="$(mktemp)"
+	getdeb "$1" "$2">$t
+	local p="$(cat $t)"
+	rm "$t" 1>&2 || error
+	if [ "$p" = "" ] || [ -f $(basename "$p") ] ;then
+		return
+	fi
+	cp "$p" ./
+	for dp in $(packagedep "$1" "$2") ;do
+		downloaddeb "$1" "$dp"
+	done
 }
 #debdep $(undeb "$pool/main/a/apt"/apt_*_armel.deb)
-packagedep "$dvd" apt
+downloaddeb "$dvd" apt
