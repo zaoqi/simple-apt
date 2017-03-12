@@ -1,7 +1,7 @@
 #!/bin/sh
 dvd="$1"
 pool="$1/pool"
-if [ ! -d "$1" ] ;then
+if [ ! -d "$pool" ] ;then
 	echo "使用方法：apt.sh <Debian DVD 目录绝对路径>" 1>&2
 	exit 1
 fi
@@ -26,6 +26,9 @@ packages() {
 		gzip -dc "$f"
 	done
 }
+package() {
+	packages "$1" | grep -A 100 'Package: '"$2" | untilNN
+}
 untilNN() {
 	while read line ;do
 		if [ "$line" = "" ] ;then
@@ -40,4 +43,4 @@ error() {
 	exit 1
 }
 #debdep $(undeb "$pool/main/a/apt"/apt_*_armel.deb)
-packages "$dvd"
+package "$dvd" python-wstools
