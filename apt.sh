@@ -6,6 +6,9 @@ chmod a+x $getpidSh
 getpid() {
 	$getpidSh
 }
+testInfo() {
+	cat >> _TEST
+}
 pid="$(getpid)"
 dvd="$1"
 pool="$1/pool"
@@ -30,7 +33,7 @@ debinfo() {
 }
 #参数：undeb得到的
 debdep() {
-	debinfo "$*" | grep Depends | sed 's/Depends: \(.*\)/\1/' | sed 's/([^)]*)//g' | sed 's/ *, */ /g'
+	debinfo "$*" | grep '^Depends' | sed 's/^Depends: \(.*\)$/\1/' | sed 's/([^)]*)//g' | sed 's/ *, */ /g' | sed 's/ *| */ /g'
 }
 #参数：$dvd
 packages() {
@@ -40,7 +43,7 @@ packages() {
 }
 #参数：$dvd 包名
 package() {
-	packages "$1" | grep -A 100 'Package: '"$2" | untilNN
+	packages "$1" | grep -A 100 '^Package: '"$2"'$' | untilNN
 }
 untilNN() {
 	while read line ;do
@@ -52,9 +55,19 @@ untilNN() {
 	done
 }
 #参数：$dvd 包名
+getdebRaw() {
+	package "$1" "$2" | grep '^Filename' | sed 's/^Filename: \(.*\)$/\1/g'
+}
+#参数：$dvd 包名
 getdeb() {
+	local d=$(getdebRaw "$1" "$2")
+	if [ "$d" = "" ] ;then
+		package "$1" "$2" | testInfo
+		echo "NoFilename-$1-$2" | testInfo
+		return
+	fi
 	echo -n "$1/"
-	package "$1" "$2" | grep Filename | sed 's/Filename: \(.*\)/\1/g'
+	echo $d
 }
 #参数：$dvd 包名
 packagedep() {
@@ -71,6 +84,7 @@ packagedep() {
 }
 error() {
 	echo "ERROR" 1>&2
+	echo "ERROR" | testInfo
 	kill $pid
 	exit 1
 }
@@ -80,10 +94,11 @@ downloaddeb() {
 	local t="$(mktemp)"
 	getdeb "$1" "$2">$t
 	local p="$(cat $t)"
-	rm "$t" 1>&2 || error
-	if [ "$p" = "" ] || [ -f $(basename "$p") ] ;then
+	basename "$p">$t
+	if [ "$p" = "" ] || [ -f "$(cat $t)" ] ;then
 		return
 	fi
+	rm "$t" 1>&2 || error
 	cp "$p" ./
 	for dp in $(packagedep "$1" "$2") ;do
 		downloaddeb "$1" "$dp"
