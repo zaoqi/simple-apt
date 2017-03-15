@@ -1,9 +1,26 @@
 #!/bin/sh
-d="$(mktemp -d)"
-t="$(mktemp)"
-cp -f "$*" $t
-cd $d
-ar -xv $t
-cd -
-tar -xvf $d/data.tar.*
-rm -rfv $t $d
+#Simple APT
+#Copyright (C) 2017  zaoqi
+
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU Affero General Public License as published
+#by the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU Affero General Public License for more details.
+
+#You should have received a copy of the GNU Affero General Public License
+#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+for file in "$@" ;do
+	d="$(mktemp -d)"
+	t="$(mktemp)"
+	cp -f "$file" $t
+	cd $d
+	ar -xv $t
+	cd -
+	tar -xvf $d/data.tar.*
+	rm -rfv $t $d
+done
